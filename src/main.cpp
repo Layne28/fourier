@@ -4,26 +4,31 @@
 #include <math.h>
 #include <complex>
 
-arma::cx_vec inverse_fourier(arma::vec q, std::string myfunction, double l);
-void print_fr(arma::cx_vec fr, std::string myfunction, double l);
+arma::cx_vec inverse_fourier_1d(arma::vec q, std::string myfunction, double l);
+void print_fr_1d(arma::cx_vec fr, std::string myfunction, double l);
 
 int main(int argc, char *argv[]){
-    if(argc!=3){
-        std::cout << "Error: require system size and length scale (lambda)." << std::endl;
+    if(argc!=4){
+        std::cout << "Error: require system size, length scale (lambda), and dimension (1 or 3)." << std::endl;
         exit(0);
     }
     int nx = std::stoi(argv[1]);
     double l = std::stod(argv[2]);
+    int dim = std::stoi(argv[3]);
     std::string myfunction = "inverse-exp";
-    arma::vec q;
-    q.zeros(nx);
-    for(int i=0; i<nx; i++) q(i) = 2*M_PI*i/nx;
-    arma::cx_vec fr = inverse_fourier(q, myfunction, l);
-    print_fr(fr, myfunction, l);
+
+    if(dim==1){
+        arma::vec q;
+        q.zeros(nx);
+        for(int i=0; i<nx; i++) q(i) = 2*M_PI*i/nx;
+        arma::cx_vec fr = inverse_fourier_1d(q, myfunction, l);
+        print_fr_1d(fr, myfunction, l);
+    }
+
     return 0;
 }
 
-arma::cx_vec inverse_fourier(arma::vec q, std::string myfunction, double l){
+arma::cx_vec inverse_fourier_1d(arma::vec q, std::string myfunction, double l){
 
     using namespace std::complex_literals; //to get 1i
 
@@ -51,7 +56,7 @@ arma::cx_vec inverse_fourier(arma::vec q, std::string myfunction, double l){
     return fr;
 }
 
-void print_fr(arma::cx_vec fr, std::string myfunction, double l){
+void print_fr_1d(arma::cx_vec fr, std::string myfunction, double l){
     int nx = fr.size();
     std::string output = myfunction + "_nx=" + std::to_string(nx) + "_l=" + std::to_string(l) + ".txt";
     std::ofstream ofile;
