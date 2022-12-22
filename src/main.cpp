@@ -6,17 +6,18 @@
 
 arma::cx_vec inverse_fourier_1d(arma::vec q, std::string myfunction, double l);
 void print_fr_1d(arma::cx_vec fr, std::string myfunction, double l);
-arma::cx_cube inverse_fourier_3d(int nx, int ny, int nz, std::string myfunction, double l);
+arma::cx_cube inverse_fourier_3d(int nx, int ny, int nz, std::string myfunction, double l, int do_fft);
 void print_fr_3d(int nx, arma::cx_cube fr, std::string myfunction, double l);
 
 int main(int argc, char *argv[]){
-    if(argc!=4){
-        std::cout << "Error: require system size, length scale (lambda), and dimension (1 or 3)." << std::endl;
+    if(argc!=5){
+        std::cout << "Error: require system size, length scale (lambda), dimension (1 or 3), and do_fft (0 or 1)." << std::endl;
         exit(0);
     }
     int nx = std::stoi(argv[1]);
     double l = std::stod(argv[2]);
     int dim = std::stoi(argv[3]);
+    int do_fft = std::stoi(argv[4]);
     std::string myfunction = "inverse-exp";
 
     if(dim==1){
@@ -27,7 +28,7 @@ int main(int argc, char *argv[]){
         print_fr_1d(fr, myfunction, l);
     }
     else if(dim==3){
-        arma::cx_cube fr = inverse_fourier_3d(nx, nx, nx, myfunction, l);
+        arma::cx_cube fr = inverse_fourier_3d(nx, nx, nx, myfunction, l, do_fft);
         print_fr_3d(nx, fr, myfunction, l);
     }
     else{
@@ -67,7 +68,7 @@ arma::cx_vec inverse_fourier_1d(arma::vec q, std::string myfunction, double l){
     return fr;
 }
 
-arma::cx_cube inverse_fourier_3d(int nx, int ny, int nz, std::string myfunction, double l){
+arma::cx_cube inverse_fourier_3d(int nx, int ny, int nz, std::string myfunction, double l, int do_fft){
 
     using namespace std::complex_literals; //to get 1i
 
@@ -97,28 +98,32 @@ arma::cx_cube inverse_fourier_3d(int nx, int ny, int nz, std::string myfunction,
         }
     }
     //Get FT
-    for(int i=0; i<nx; i++){
-        for(int j=0; j<ny; j++){
-            for(int k=0; k<nz; k++){
-                for(int q1=0; q1<nx; q1++){
-                    for(int q2=0; q2<ny; q2++){
-                        for(int q3=0; q3<nz; q3++){
-                            std::complex<double> update = fq(q1,q2,q3)*std::exp(2*M_PI*1i*(
-                                (1.0*i*q1)/(1.0*nx) +
-                                (1.0*j*q2)/(1.0*ny) +
-                                (1.0*k*q3)/(1.0*nz)));
-                            //Check that imaginary part is zero
-                            //if(update.imag()>1e-3) std::cout << "imaginary part:" << update.imag() << std::endl;
-                            fr(i,j,k) += update;
+    if(do_fft==1){
+        //TODO: do stuff...
+    }
+    else{
+        for(int i=0; i<nx; i++){
+            for(int j=0; j<ny; j++){
+                for(int k=0; k<nz; k++){
+                    for(int q1=0; q1<nx; q1++){
+                        for(int q2=0; q2<ny; q2++){
+                            for(int q3=0; q3<nz; q3++){
+                                std::complex<double> update = fq(q1,q2,q3)*std::exp(2*M_PI*1i*(
+                                    (1.0*i*q1)/(1.0*nx) +
+                                    (1.0*j*q2)/(1.0*ny) +
+                                    (1.0*k*q3)/(1.0*nz)));
+                                //Check that imaginary part is zero
+                                //if(update.imag()>1e-3) std::cout << "imaginary part:" << update.imag() << std::endl;
+                                fr(i,j,k) += update;
+                            }
                         }
                     }
+                    fr(i,j,k) *= 1.0/(nx*ny*nz);
                 }
-                fr(i,j,k) *= 1.0/(nx*ny*nz);
             }
         }
+        return fr;
     }
-
-    return fr;
 }
 
 void print_fr_1d(arma::cx_vec fr, std::string myfunction, double l){
@@ -132,6 +137,8 @@ void print_fr_1d(arma::cx_vec fr, std::string myfunction, double l){
 }
 
 void print_fr_3d(int nx, arma::cx_cube fr, std::string myfunction, double l){
+    //print out C(x,y,z)
+    /*
     std::string output = myfunction + "_3d_nx=" + std::to_string(nx) + "_l=" + std::to_string(l) + ".txt";
     std::ofstream ofile;
     ofile.open(output);
@@ -142,4 +149,15 @@ void print_fr_3d(int nx, arma::cx_cube fr, std::string myfunction, double l){
             }
         }
     }
+    */
+
+    //print out C(x,y=0,z=0)
+    std::string output2 = myfunction + "_3d_onedir_nx=" + std::to_string(nx) + "_l=" + std::to_string(l) + ".txt";
+    std::ofstream ofile2;
+    ofile2.open(output2);
+    for(int i=0; i<nx; i++){
+        ofile2 << 1.0*i << " " << std::real(fr(i,0,0)) << std::endl;
+    }
+
+    //TODO: Also get C(r) by grouping points w/ same radius
 }
